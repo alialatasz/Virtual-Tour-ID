@@ -742,7 +742,6 @@ export const heritageSites: HeritageSite[] = [
         infoHotspots: [],
         sceneHotspots: [
           { pitch: -3, yaw: -65, targetScene: "r05-lanjut-dari-miniatur", text: "LANJUT KE SAYAP BENTENG" },
-          { pitch: -2, yaw: -140, targetScene: "r04-miniatur-denah", text: "MASUK RUANG MAKET" },
           { pitch: -3, yaw: 115, targetScene: "r03-perempatan-pertama", text: "KEMBALI KE PEREMPATAN" }
         ]
       },
