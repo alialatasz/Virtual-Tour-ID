@@ -256,6 +256,13 @@ export default function AFrameViewer({ scene, onSceneChange, onHotspotClick, isG
       setIsVideoPlaying(false);
       setIsBuffering(true);
 
+      // Pastikan posisi kamera kembali netral di tengah bola 360 (0 0 0)
+      const camera = document.querySelector('a-camera');
+      if (camera) {
+        camera.removeAttribute('animation__rush');
+        camera.setAttribute('position', '0 0 0');
+      }
+
       // Pasang target video baru secara eksplisit
       vid.pause();
       vid.src = targetSrc;
