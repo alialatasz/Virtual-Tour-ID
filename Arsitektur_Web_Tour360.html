@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arsitektur Sistem: Virtual Tour 360</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; max-width: 900px; margin: 0 auto; padding: 40px 20px; color: #333; }
+        h1 { color: #1a202c; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; font-size: 28px; }
+        h2 { color: #2d3748; margin-top: 35px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; font-size: 22px; }
+        ul { margin-bottom: 20px; padding-left: 20px; }
+        li { margin-bottom: 12px; }
+        .mermaid { display: flex; justify-content: center; margin: 30px 0; background: #f8fafc; padding: 30px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .print-btn { display: block; width: 100%; padding: 15px; background: #080b08; color: #FD6842; text-align: center; font-weight: bold; text-decoration: none; border-radius: 8px; margin-bottom: 30px; cursor: pointer; border: 2px solid #FD6842; font-size: 16px; transition: 0.3s; }
+        .print-btn:hover { background: #FD6842; color: #fff; }
+        @media print { 
+            .print-btn { display: none; } 
+            body { padding: 0; max-width: 100%; } 
+            .mermaid { box-shadow: none; border: none; padding: 0; }
+        }
+    </style>
+</head>
+<body>
+    <button class="print-btn" onclick="window.print()">🖨️ KLIK DI SINI UNTUK SIMPAN SEBAGAI PDF</button>
+    
+    <h1>Arsitektur Sistem: Virtual Tour 360 Benteng Pendem (Fort Willem I)</h1>
+    
+    <p>Aplikasi Virtual Tour 360 ini dibangun menggunakan arsitektur <strong>Modern Web Application</strong> (Single Page Application/SPA) yang berfokus pada kecepatan, rendering grafis 3D (WebGL) yang mulus, dan antarmuka pengguna (UI) yang sinematik.</p>
+    <p>Sistem ini menggunakan pendekatan <strong>Jamstack (JavaScript, API, Markup)</strong> yang jauh lebih cepat dan aman dibandingkan arsitektur tradisional.</p>
+
+    <h2>1. Frontend (Antarmuka Pengguna)</h2>
+    <ul>
+        <li><strong>Framework Utama: Next.js 14 (React.js)</strong><br>Mengatur state manajemen dan memecah UI menjadi komponen-komponen kecil yang bisa digunakan ulang (seperti <code>Navbar</code>, <code>RoomCarousel</code>, <code>HistoryModal</code>).</li>
+        <li><strong>Styling & Desain: Tailwind CSS</strong><br>Menciptakan tema <strong>Cinematic Dark Glassmorphism</strong> secara responsif dan sangat ringan.</li>
+        <li><strong>Animasi: Framer Motion & CSS Transitions</strong><br>Mengatur animasi Splash Screen dan transisi pergantian ruangan yang halus.</li>
+    </ul>
+
+    <h2>2. Mesin Virtual 360 (Core 3D Engine)</h2>
+    <ul>
+        <li><strong>Engine Utama: Pannellum (WebGL)</strong><br>Pustaka berbasis WebGL murni yang super ringan untuk merender panorama 360 derajat.</li>
+        <li><strong>Integrasi React Wrapper (<code>PannellumViewer.tsx</code>)</strong><br>Memiliki fitur khusus seperti <strong>Radar Minimap Dinamis</strong> (algoritma pelacakan rotasi 60fps) dan <strong>Gyroscope</strong> (mendeteksi pergerakan HP via DeviceOrientation API).</li>
+    </ul>
+
+    <h2>3. Backend & Database (Manajemen Data)</h2>
+    <ul>
+        <li><strong>Database Lokal: <code>lib/tourData.ts</code></strong><br>Data sejarah, koordinat rute, dan teks disimpan secara lokal (In-Memory). Memberikan kecepatan <em>Zero-Latency</em> tanpa perlu membuang waktu menunggu respon server database eksternal.</li>
+        <li><strong>Arsitektur Serverless</strong><br>Siap di-hosting pada jaringan Serverless (seperti Vercel) yang akan mendistribusikan aplikasi ke CDN global.</li>
+    </ul>
+
+    <h2>4. Alur Kerja Arsitektur (Data Flow)</h2>
+    <p>Berikut adalah visualisasi alur (Data Flow) bagaimana setiap lapisan berinteraksi secara real-time:</p>
+    
+    <div class="mermaid">
+    graph TD
+        A[Pengguna / User] -->|Klik Kotak Ruangan| B(RoomCarousel Component)
+        A -->|Geser Layar 360| C(Pannellum WebGL Canvas)
+        
+        B -->|Trigger State Update| D{Global State: currentScene}
+        C -->|Trigger Yaw Info| E(Radar Minimap)
+        
+        D -->|Kirim ID Ruangan| F[(tourData.ts / Database)]
+        F -->|Return Data: Foto, Sejarah, Koordinat| G(PannellumViewer)
+        F -->|Return Data: Teks Sejarah| H(HistoryModal)
+        
+        G -->|Update Gambar & Hotspot| C
+        
+        style A fill:#FD6842,stroke:#333,stroke-width:2px,color:#fff
+        style D fill:#548749,stroke:#333,stroke-width:2px,color:#fff
+        style F fill:#333,stroke:#FD6842,stroke-width:2px,color:#fff
+    </div>
+    
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true, theme: 'default' });
+    </script>
+</body>
+</html>

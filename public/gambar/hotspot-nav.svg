@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="5" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Outer Ring -->
+  <circle cx="100" cy="100" r="86" fill="none" stroke="rgba(253, 104, 66, 0.35)" stroke-width="3" stroke-dasharray="10 6" />
+
+  <!-- Glass Circle Base -->
+  <circle cx="100" cy="100" r="70" fill="#0a0d0a" fill-opacity="0.8" stroke="#FD6842" stroke-width="3.5" filter="url(#glow)" />
+
+  <!-- Modern Dual Chevron Arrow -->
+  <path d="M68 122 L100 86 L132 122" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M76 138 L100 110 L124 138" fill="none" stroke="#FD6842" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+</svg>
