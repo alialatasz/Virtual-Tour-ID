@@ -822,8 +822,8 @@ export const heritageSites: HeritageSite[] = [
         roomNumber: 4,
         infoHotspots: [],
         sceneHotspots: [
-          { pitch: -2, yaw: 40, targetScene: "r08-pemakaman", text: "MASUK KE MAKAM & MONUMEN" },
-          { pitch: -3, yaw: 180, targetScene: "r06-belok-kiri", text: "KEMBALI KE JALUR BARAT" }
+          { pitch: -3, yaw: 180, targetScene: "r08-pemakaman", text: "MASUK KE MAKAM & MONUMEN" },
+          { pitch: -2, yaw: 40, targetScene: "r06-belok-kiri", text: "KEMBALI KE JALUR BARAT" }
         ]
       },
 
