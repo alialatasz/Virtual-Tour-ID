@@ -107,7 +107,10 @@ export default function TourPage({ params }: { params: { siteId: string } }) {
   const handleRoomClick = (id: string) => { 
     if (!id || !siteData?.rooms[id]) return;
     handleSceneChange(id); 
-    setModalData({ id, tab: 'current' }); 
+  };
+  const handleRoomInfoClick = (id: string) => {
+    if (!id || !siteData?.rooms[id]) return;
+    setModalData({ id, tab: 'history' });
   };
 
   const handleNavMenuClick = (menu: string) => {
@@ -210,7 +213,11 @@ export default function TourPage({ params }: { params: { siteId: string } }) {
           )}
         </AnimatePresence>
 
-        <RoomCarousel onRoomClick={handleRoomClick} currentSceneId={currentScene} />
+        <RoomCarousel 
+          onRoomClick={handleRoomClick} 
+          onInfoClick={handleRoomInfoClick}
+          currentSceneId={currentScene} 
+        />
       </div>
 
       {/* Minimap Radar Lingkaran Video Game HUD (Tepat di Bawah Tulisan JELAJAH VIRTUAL ID) */}
