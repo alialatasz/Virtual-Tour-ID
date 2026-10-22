@@ -21,10 +21,39 @@ interface Props {
   onHotspotClick?: (id: string, tab: 'history'|'current') => void;
 }
 
+const getScenePlaceholder = (scene: SceneData) => {
+  const map: Record<string, string> = {
+    "r01-gerbang": "/gambar/thumb-r01-gerbang-1.jpg",
+    "r01-gerbang-2": "/gambar/thumb-r01-gerbang-2.jpg",
+    "r01-gerbang-3": "/gambar/thumb-r01-gerbang-3.jpg",
+    "r01-gerbang-4": "/gambar/thumb-r01-gerbang-4.jpg",
+    "r02-checker-gate": "/gambar/thumb-r02-checker-gate-1.jpg",
+    "r02-checker-gate-2": "/gambar/thumb-r02-checker-gate-2.jpg",
+    "r03-perempatan-pertama": "/gambar/thumb-r03-perempatan.jpg",
+    "r03-lanjut-maju": "/gambar/thumb-r03-lanjut-maju.jpg",
+    "r04-miniatur-denah": "/gambar/thumb-r04-miniatur.jpg",
+    "r05-lanjut-dari-miniatur": "/gambar/thumb-r05-lanjut-miniatur.jpg",
+    "r06-belok-kiri": "/gambar/thumb-r06-belok-kiri.jpg",
+    "r07-menuju-pemakaman": "/gambar/thumb-r07-menuju-makam.jpg",
+    "r08-pemakaman": "/gambar/thumb-r08-pemakaman.jpg",
+    "lapangan-utama": "/gambar/thumb-r01-gerbang-1.jpg",
+  };
+  return map[scene.id] || scene.imgAfter || "/gambar/thumb-r01-gerbang-1.jpg";
+};
+
 export default function AFrameViewer({ scene, onSceneChange, onHotspotClick }: Props) {
   const [isMounted, setIsMounted] = useState(false);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const [isBuffering, setIsBuffering] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
   const onSceneChangeRef = useRef(onSceneChange);
+
+  const placeholderSrc = getScenePlaceholder(scene);
+
+  useEffect(() => {
+    setIsVideoPlaying(false);
+    setIsBuffering(true);
+  }, [scene.id, scene.mediaUrl]);
 
   useEffect(() => {
     onSceneChangeRef.current = onSceneChange;
@@ -177,6 +206,22 @@ export default function AFrameViewer({ scene, onSceneChange, onHotspotClick }: P
         vid.src === targetSrc
       );
 
+      const onPlaying = () => {
+        setIsVideoPlaying(true);
+        setIsBuffering(false);
+      };
+      const onWaiting = () => {
+        setIsBuffering(true);
+      };
+      const onError = (e: any) => {
+        console.warn("Video stream notice:", e);
+        setIsBuffering(false);
+      };
+
+      vid.addEventListener("playing", onPlaying);
+      vid.addEventListener("waiting", onWaiting);
+      vid.addEventListener("error", onError);
+
       if (!isSameSrc) {
         vid.src = targetSrc;
         vid.currentTime = 0;
@@ -206,8 +251,17 @@ export default function AFrameViewer({ scene, onSceneChange, onHotspotClick }: P
       } else {
         if (vid.paused) {
           vid.play().catch(e => console.warn(e));
+        } else {
+          setIsVideoPlaying(true);
+          setIsBuffering(false);
         }
       }
+
+      return () => {
+        vid.removeEventListener("playing", onPlaying);
+        vid.removeEventListener("waiting", onWaiting);
+        vid.removeEventListener("error", onError);
+      };
     }
   }, [isMounted, scene.id, scene.mediaUrl, scene.panorama]);
 
@@ -235,6 +289,14 @@ export default function AFrameViewer({ scene, onSceneChange, onHotspotClick }: P
       onClick={ensurePlay}
       onTouchStart={ensurePlay}
     >
+      {/* Badge Indikator Buffering Video 360° yang Halus & Informatif */}
+      {isBuffering && (
+        <div className="absolute top-24 left-1/2 -translate-x-1/2 sm:top-24 sm:left-auto sm:right-24 z-50 pointer-events-none flex items-center gap-2 bg-[#0c120c]/85 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/10 text-white/90 text-xs shadow-xl animate-pulse">
+          <Loader2 size={13} className="text-[#FD6842] animate-spin" />
+          <span>Memuat Streaming 360°...</span>
+        </div>
+      )}
+
       {/* @ts-ignore */}
       <a-scene 
         embedded 
@@ -265,12 +327,21 @@ export default function AFrameViewer({ scene, onSceneChange, onHotspotClick }: P
         {/* @ts-ignore */}
         </a-assets>
 
+        {/* Latar Belakang Foto 360° Equirectangular Instan (0 Detik, Menghilangkan Layar Hitam) */}
+        {/* @ts-ignore */}
+        <a-sky 
+          src={placeholderSrc} 
+          rotation="0 -90 0"
+        ></a-sky>
+
+        {/* Pemutar Video 360° Spherical (Fades in otomatis begitu video berputar) */}
         {/* @ts-ignore */}
         <a-videosphere 
           src="#video360" 
           rotation="0 -90 0"
           segments-width="36"
           segments-height="36"
+          opacity={isVideoPlaying ? "1" : "0"}
         ></a-videosphere>
 
         {/* Render Hotspots Navigasi Pindah Ruangan Elegan & Proporsional */}
