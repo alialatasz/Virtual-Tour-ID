@@ -550,11 +550,11 @@ export default function MorphGallery({
   const current = items[active]
 
   const arrowClass =
-    "absolute top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center " +
-    "rounded-full border border-white/20 bg-white/10 text-white backdrop-blur-md " +
+    "absolute top-1/2 z-10 flex h-8 w-8 sm:h-11 sm:w-11 -translate-y-1/2 items-center justify-center " +
+    "rounded-full border border-white/20 bg-black/40 sm:bg-white/10 text-white backdrop-blur-md " +
     "transition-colors hover:bg-white/25 focus-visible:outline focus-visible:outline-2 " +
     "focus-visible:outline-offset-2 focus-visible:outline-white " +
-    "disabled:pointer-events-none disabled:opacity-25"
+    "disabled:pointer-events-none disabled:opacity-25 shadow-lg"
 
   return (
     <section
@@ -599,7 +599,7 @@ export default function MorphGallery({
       )}
 
       <div
-        className="pointer-events-none absolute inset-x-0 bottom-0 z-[5] h-56 bg-gradient-to-b from-transparent to-black/65"
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-[5] h-24 sm:h-44 bg-gradient-to-b from-transparent to-black/75"
         aria-hidden="true"
       />
 
@@ -607,21 +607,21 @@ export default function MorphGallery({
         <>
           <button
             type="button"
-            className={arrowClass + " left-4 sm:left-8"}
+            className={arrowClass + " left-2 sm:left-6"}
             onClick={() => go(active - 1)}
             disabled={atStart}
             aria-label="Previous image"
           >
-            <ChevronLeft className="h-5 w-5" />
+            <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
           </button>
           <button
             type="button"
-            className={arrowClass + " right-4 sm:right-8"}
+            className={arrowClass + " right-2 sm:right-6"}
             onClick={() => go(active + 1)}
             disabled={atEnd}
             aria-label="Next image"
           >
-            <ChevronRight className="h-5 w-5" />
+            <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
           </button>
         </>
       )}
@@ -629,11 +629,10 @@ export default function MorphGallery({
       {thumbnails && items.length > 1 && (
         <ul
           className={
-            "absolute inset-x-0 bottom-8 z-10 mx-auto flex w-max max-w-[calc(100%-2rem)] gap-2 " +
-            "list-none overflow-x-auto scroll-smooth p-0 pb-2.5 " +
+            "absolute inset-x-0 bottom-2.5 sm:bottom-6 z-10 mx-auto flex w-max max-w-[calc(100%-1rem)] sm:max-w-[calc(100%-2rem)] gap-1.5 sm:gap-2 " +
+            "list-none overflow-x-auto scroll-smooth p-1 pb-1.5 " +
             "[&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:rounded [&::-webkit-scrollbar-track]:bg-white/10 " +
-            "[&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:bg-white/30 " +
-            "max-sm:hidden"
+            "[&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:bg-white/30"
           }
         >
           {items.map((item, i) => (
@@ -644,24 +643,20 @@ export default function MorphGallery({
                 aria-current={i === active}
                 aria-label={item.alt ? "Show " + item.alt : "Show image " + (i + 1)}
                 className={
-                  "block cursor-pointer overflow-hidden rounded border-2 bg-transparent p-0 transition " +
+                  "block cursor-pointer overflow-hidden rounded-md border-2 bg-transparent p-0 transition-all " +
                   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white " +
                   (i === active
-                    ? "border-white opacity-100"
-                    : "border-transparent opacity-55 hover:opacity-85")
+                    ? "border-[#FD6842] ring-2 ring-[#FD6842]/50 opacity-100 scale-105 shadow-md"
+                    : "border-white/20 opacity-60 hover:opacity-100")
                 }
               >
                 <img
                   src={item.thumb ?? item.src}
                   alt=""
-                  width={80}
-                  height={50}
                   loading="lazy"
                   decoding="async"
-                  className="block object-cover"
-                  // Preflight's img { max-width: 100% } would otherwise shrink
-                  // these inside the scroller and break the strip's rhythm.
-                  style={{ maxWidth: "none", width: 80, height: 50 }}
+                  className="block object-cover w-14 h-9 sm:w-20 sm:h-12"
+                  style={{ maxWidth: "none" }}
                 />
               </button>
             </li>
