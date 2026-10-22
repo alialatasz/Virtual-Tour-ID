@@ -741,9 +741,9 @@ export const heritageSites: HeritageSite[] = [
         roomNumber: 3,
         infoHotspots: [],
         sceneHotspots: [
-          { pitch: -2, yaw: -65, targetScene: "r04-miniatur-denah", text: "MASUK RUANG MAKET" },
-          { pitch: -3, yaw: 15, targetScene: "r05-lanjut-dari-miniatur", text: "LANJUT KE SAYAP BENTENG" },
-          { pitch: -3, yaw: 180, targetScene: "r03-perempatan-pertama", text: "KEMBALI KE PEREMPATAN" }
+          { pitch: -3, yaw: -65, targetScene: "r05-lanjut-dari-miniatur", text: "LANJUT KE SAYAP BENTENG" },
+          { pitch: -2, yaw: -140, targetScene: "r04-miniatur-denah", text: "MASUK RUANG MAKET" },
+          { pitch: -3, yaw: 115, targetScene: "r03-perempatan-pertama", text: "KEMBALI KE PEREMPATAN" }
         ]
       },
 
@@ -782,7 +782,7 @@ export const heritageSites: HeritageSite[] = [
         roomNumber: 16,
         infoHotspots: [],
         sceneHotspots: [
-          { pitch: -2.5, yaw: 148, targetScene: "r04-miniatur-denah", text: "MASUK RUANG MAKET" },
+          { pitch: -2.5, yaw: -22, targetScene: "r04-miniatur-denah", text: "MASUK RUANG MAKET" },
           { pitch: -3, yaw: 180, targetScene: "r03-lanjut-maju", text: "KEMBALI KE JALAN UTAMA" }
         ]
       },
