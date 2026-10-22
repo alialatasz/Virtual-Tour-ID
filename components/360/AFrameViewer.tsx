@@ -7,6 +7,7 @@ import { Loader2 } from "lucide-react";
 declare global {
   interface Window {
     AFRAME?: any;
+    __onTourSceneChange?: (sceneId: string) => void;
   }
   namespace JSX {
     interface IntrinsicElements {
@@ -47,51 +48,76 @@ export default function AFrameViewer({ scene, onSceneChange, onHotspotClick }: P
   const [isBuffering, setIsBuffering] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
   const onSceneChangeRef = useRef(onSceneChange);
+  const lastLoadedSceneIdRef = useRef<string>("");
 
   const placeholderSrc = getScenePlaceholder(scene);
-
-  useEffect(() => {
-    setIsVideoPlaying(false);
-    setIsBuffering(true);
-  }, [scene.id, scene.mediaUrl]);
 
   useEffect(() => {
     onSceneChangeRef.current = onSceneChange;
   }, [onSceneChange]);
 
+  // Daftarkan global callback agar komponen A-Frame bisa memicu perpindahan scene React secara andal
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.__onTourSceneChange = (targetScene: string) => {
+        if (onSceneChangeRef.current) {
+          onSceneChangeRef.current(targetScene);
+        }
+      };
+    }
+    return () => {
+      if (typeof window !== "undefined") {
+        delete window.__onTourSceneChange;
+      }
+    };
+  }, []);
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       require("aframe");
       
-      // Mendaftarkan komponen klik khusus untuk Next.js agar bisa komunikasi dengan React State
+      // Mendaftarkan komponen klik & sentuh khusus untuk hotspot
       if (typeof window.AFRAME !== 'undefined' && !window.AFRAME.components['cursor-listener']) {
         window.AFRAME.registerComponent('cursor-listener', {
           init: function () {
-            const handleAction = () => {
-              const target = this.el.getAttribute('data-target');
-              if (target && onSceneChangeRef.current) {
-                // Efek Google Street View: Kamera meluncur maju ke depan
+            const el = this.el;
+            let isTriggered = false;
+
+            const handleAction = (evt?: any) => {
+              if (evt) {
+                if (evt.stopPropagation) evt.stopPropagation();
+              }
+              if (isTriggered) return;
+              isTriggered = true;
+              setTimeout(() => { isTriggered = false; }, 600);
+
+              const target = el.getAttribute('data-target');
+              if (target && typeof window !== 'undefined' && window.__onTourSceneChange) {
+                // Efek Street View: Kamera meluncur maju ke depan
                 const camera = document.querySelector('a-camera');
                 if (camera) {
-                  camera.setAttribute('animation__rush', 'property: position; to: 0 0 -2.5; dur: 400; easing: easeInQuad');
+                  camera.setAttribute('animation__rush', 'property: position; to: 0 0 -2.5; dur: 350; easing: easeInQuad');
                 }
-                onSceneChangeRef.current(target);
+                window.__onTourSceneChange(target);
               }
             };
 
-            this.el.addEventListener('click', handleAction);
-            // Efek hover (kursor tangan)
-            this.el.addEventListener('mouseenter', () => {
+            el.addEventListener('click', handleAction);
+            el.addEventListener('touchend', (e: any) => {
+              e.preventDefault();
+              handleAction(e);
+            });
+            el.addEventListener('mouseenter', () => {
               document.body.style.cursor = 'pointer';
             });
-            this.el.addEventListener('mouseleave', () => {
+            el.addEventListener('mouseleave', () => {
               document.body.style.cursor = 'default';
             });
           }
         });
       }
 
-      // Mendaftarkan kontrol rotasi keyboard agar tombol panah keyboard memutar pandangan (bukan menggeser posisi)
+      // Mendaftarkan kontrol rotasi keyboard (panah kanan-kiri-atas-bawah)
       if (typeof window.AFRAME !== 'undefined' && !window.AFRAME.components['keyboard-rotate']) {
         window.AFRAME.registerComponent('keyboard-rotate', {
           init: function () {
@@ -100,7 +126,7 @@ export default function AFrameViewer({ scene, onSceneChange, onHotspotClick }: P
                 e.preventDefault();
                 const lookControls = (this as any).el.components['look-controls'];
                 if (lookControls && lookControls.yawObject && lookControls.pitchObject) {
-                  const rotSpeed = 0.06; // Kecepatan rotasi sudut
+                  const rotSpeed = 0.06;
                   if (e.key === 'ArrowLeft') {
                     lookControls.yawObject.rotation.y += rotSpeed;
                   } else if (e.key === 'ArrowRight') {
@@ -139,14 +165,12 @@ export default function AFrameViewer({ scene, onSceneChange, onHotspotClick }: P
               var deltaY = 2 * Math.PI * (touch.pageY - this.touchStart.y) / canvas.clientHeight;
               var direction = this.data.reverseTouchDrag ? 1 : -1;
               
-              // Rotasi Horizontal (Yaw: Kanan - Kiri)
               if (this.yawObject) {
                 this.yawObject.rotation.y -= deltaX * 0.5 * direction;
               }
-              // Rotasi Vertikal (Pitch: Atas - Bawah)
               if (this.pitchObject) {
                 this.pitchObject.rotation.x -= deltaY * 0.5 * direction;
-                var maxPitch = Math.PI / 2.15; // Batas ~84 derajat agar tidak jungkir balik
+                var maxPitch = Math.PI / 2.15;
                 this.pitchObject.rotation.x = Math.max(-maxPitch, Math.min(maxPitch, this.pitchObject.rotation.x));
               }
               
@@ -161,17 +185,18 @@ export default function AFrameViewer({ scene, onSceneChange, onHotspotClick }: P
 
       setIsMounted(true);
     }
-  }, [onSceneChange]);
+  }, []);
 
   const ensurePlay = () => {
     if (videoRef.current) {
-      videoRef.current.muted = true;
-      (videoRef.current as any).defaultMuted = true;
-      videoRef.current.setAttribute("muted", "");
-      videoRef.current.setAttribute("playsinline", "");
-      videoRef.current.setAttribute("webkit-playsinline", "true");
-      if (videoRef.current.paused) {
-        videoRef.current.play().catch(e => console.warn("Play error:", e));
+      const vid = videoRef.current;
+      vid.muted = true;
+      (vid as any).defaultMuted = true;
+      vid.setAttribute("muted", "");
+      vid.setAttribute("playsinline", "");
+      vid.setAttribute("webkit-playsinline", "true");
+      if (vid.paused) {
+        vid.play().catch(e => console.warn("Ensure play error:", e));
       }
     }
   };
@@ -189,79 +214,84 @@ export default function AFrameViewer({ scene, onSceneChange, onHotspotClick }: P
     };
   }, []);
 
+  // Manajemen Pergantian Video yang Handal saat Scene Berubah
   useEffect(() => {
-    if (isMounted && videoRef.current) {
-      const vid = videoRef.current;
-      vid.muted = true;
-      (vid as any).defaultMuted = true;
-      vid.setAttribute("muted", "");
-      vid.setAttribute("playsinline", "");
-      vid.setAttribute("webkit-playsinline", "true");
+    if (!isMounted || !videoRef.current) return;
+    const vid = videoRef.current;
 
-      const targetSrc = scene.mediaUrl || scene.panorama;
-      const currentSrcPath = vid.src ? new URL(vid.src, window.location.href).pathname : "";
-      const isSameSrc = (
-        decodeURIComponent(currentSrcPath) === decodeURIComponent(targetSrc) ||
-        currentSrcPath === targetSrc ||
-        vid.src === targetSrc
-      );
+    // Pastikan atribut pemutar seluler selalu aktif
+    vid.muted = true;
+    (vid as any).defaultMuted = true;
+    vid.setAttribute("muted", "");
+    vid.setAttribute("playsinline", "");
+    vid.setAttribute("webkit-playsinline", "true");
 
-      const onPlaying = () => {
-        setIsVideoPlaying(true);
-        setIsBuffering(false);
-      };
-      const onWaiting = () => {
-        setIsBuffering(true);
-      };
-      const onError = (e: any) => {
-        console.warn("Video stream notice:", e);
-        setIsBuffering(false);
-      };
+    const targetSrc = scene.mediaUrl || scene.panorama;
 
-      vid.addEventListener("playing", onPlaying);
-      vid.addEventListener("waiting", onWaiting);
-      vid.addEventListener("error", onError);
+    // Deteksi jika scene berpindah ke scene baru
+    if (lastLoadedSceneIdRef.current !== scene.id) {
+      lastLoadedSceneIdRef.current = scene.id;
+      setIsVideoPlaying(false);
+      setIsBuffering(true);
 
-      if (!isSameSrc) {
-        vid.src = targetSrc;
-        vid.currentTime = 0;
-        try {
-          vid.load();
-        } catch (err) {
-          console.warn("Video reload error:", err);
-        }
-
-        const handleReady = () => {
-          vid.play().catch(e => console.warn("Autoplay ditahan browser:", e));
-          const videosphere = document.querySelector('a-videosphere');
-          if (videosphere) {
-            const mesh = (videosphere as any).getObject3D('mesh');
-            if (mesh && mesh.material && mesh.material.map) {
-              mesh.material.map.needsUpdate = true;
-            }
-          }
-        };
-
-        if (vid.readyState >= 2) {
-          handleReady();
-        } else {
-          vid.addEventListener('canplay', handleReady, { once: true });
-          vid.addEventListener('loadeddata', handleReady, { once: true });
-        }
-      } else {
-        if (vid.paused) {
-          vid.play().catch(e => console.warn(e));
-        } else {
-          setIsVideoPlaying(true);
-          setIsBuffering(false);
-        }
+      // Pasang target video baru secara eksplisit
+      vid.pause();
+      vid.src = targetSrc;
+      vid.currentTime = 0;
+      try {
+        vid.load();
+      } catch (err) {
+        console.warn("Video load error:", err);
       }
 
-      return () => {
-        vid.removeEventListener("playing", onPlaying);
-        vid.removeEventListener("waiting", onWaiting);
-        vid.removeEventListener("error", onError);
+      const updateVideosphereTexture = () => {
+        const videosphere = document.querySelector('a-videosphere');
+        if (videosphere) {
+          const mesh = (videosphere as any).getObject3D('mesh');
+          if (mesh && mesh.material && mesh.material.map) {
+            mesh.material.map.needsUpdate = true;
+          }
+        }
       };
+
+      const handleCanPlay = () => {
+        vid.play().catch(e => console.warn("Autoplay notice:", e));
+        updateVideosphereTexture();
+      };
+
+      const handlePlaying = () => {
+        setIsVideoPlaying(true);
+        setIsBuffering(false);
+        updateVideosphereTexture();
+      };
+
+      const handleWaiting = () => {
+        setIsBuffering(true);
+      };
+
+      const handleError = (e: any) => {
+        console.warn("Video loading notice (fallback 360 photo active):", e);
+        setIsBuffering(false);
+      };
+
+      vid.addEventListener("canplay", handleCanPlay, { once: true });
+      vid.addEventListener("playing", handlePlaying);
+      vid.addEventListener("waiting", handleWaiting);
+      vid.addEventListener("error", handleError);
+
+      return () => {
+        vid.removeEventListener("canplay", handleCanPlay);
+        vid.removeEventListener("playing", handlePlaying);
+        vid.removeEventListener("waiting", handleWaiting);
+        vid.removeEventListener("error", handleError);
+      };
+    } else {
+      if (vid.paused) {
+        vid.play().catch(e => console.warn(e));
+      } else {
+        setIsVideoPlaying(true);
+        setIsBuffering(false);
+      }
     }
   }, [isMounted, scene.id, scene.mediaUrl, scene.panorama]);
 
@@ -272,7 +302,7 @@ export default function AFrameViewer({ scene, onSceneChange, onHotspotClick }: P
       camera.removeAttribute('animation__rush');
       camera.setAttribute('position', '0 0 0');
     }
-  }, [scene.id, scene.mediaUrl]);
+  }, [scene.id]);
 
   if (!isMounted) {
     return (
@@ -289,11 +319,11 @@ export default function AFrameViewer({ scene, onSceneChange, onHotspotClick }: P
       onClick={ensurePlay}
       onTouchStart={ensurePlay}
     >
-      {/* Badge Indikator Buffering Video 360° yang Halus & Informatif */}
+      {/* Badge Indikator Buffering Video 360° yang Halus */}
       {isBuffering && (
         <div className="absolute top-24 left-1/2 -translate-x-1/2 sm:top-24 sm:left-auto sm:right-24 z-50 pointer-events-none flex items-center gap-2 bg-[#0c120c]/85 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/10 text-white/90 text-xs shadow-xl animate-pulse">
           <Loader2 size={13} className="text-[#FD6842] animate-spin" />
-          <span>Memuat Streaming 360°...</span>
+          <span>Memuat Aliran Video 360°...</span>
         </div>
       )}
 
@@ -330,6 +360,7 @@ export default function AFrameViewer({ scene, onSceneChange, onHotspotClick }: P
         {/* Latar Belakang Foto 360° Equirectangular Instan (0 Detik, Menghilangkan Layar Hitam) */}
         {/* @ts-ignore */}
         <a-sky 
+          key={`sky-${scene.id}`}
           src={placeholderSrc} 
           rotation="0 -90 0"
         ></a-sky>
@@ -341,31 +372,40 @@ export default function AFrameViewer({ scene, onSceneChange, onHotspotClick }: P
           rotation="0 -90 0"
           segments-width="36"
           segments-height="36"
-          opacity={isVideoPlaying ? "1" : "0"}
+          visible={isVideoPlaying}
         ></a-videosphere>
 
-        {/* Render Hotspots Navigasi Pindah Ruangan Elegan & Proporsional */}
+        {/* Render Hotspots Navigasi Pindah Ruangan dengan Hitbox Presisi */}
         {scene.sceneHotspots?.map((hotspot, idx) => {
-          // Ukuran proporsional & terbaca jelas untuk layar HP maupun desktop
           const btnWidth = hotspot.text.length > 14 ? "1.9" : hotspot.text.length > 8 ? "1.5" : "1.2";
           const textWidth = hotspot.text.length > 14 ? "3.8" : "4.0";
+          const hitboxWidth = Math.max(Number(btnWidth), 2.0);
 
           return (
             // @ts-ignore
-            <a-entity key={idx} rotation={`${hotspot.pitch} ${hotspot.yaw} 0`}>
-              {/* Ikon Panah Mengambang Proporsional */}
+            <a-entity key={`${scene.id}-hotspot-${idx}`} rotation={`${hotspot.pitch} ${hotspot.yaw} 0`}>
+              {/* Hitbox Transparan Luas untuk Sentuhan HP & Klik Mouse yang 100% Responsif */}
+              {/* @ts-ignore */}
+              <a-plane
+                position="0 -0.10 -4.4"
+                width={hitboxWidth}
+                height="1.1"
+                material="opacity: 0.001; transparent: true"
+                class="clickable"
+                cursor-listener
+                data-target={hotspot.targetScene}
+              ></a-plane>
+
+              {/* Ikon Panah Mengambang Proporsional (Visual) */}
               {/* @ts-ignore */}
               <a-image 
                 src="#arrow-icon" 
                 position="0 0.10 -4.5" 
                 scale="0.48 0.48 0.48" 
-                class="clickable" 
-                cursor-listener 
-                data-target={hotspot.targetScene}
                 animation="property: position; to: 0 0.20 -4.5; dir: alternate; dur: 1200; easing: easeInOutSine; loop: true"
               ></a-image>
 
-              {/* Background Melengkung Bertekstur button-pattern Transparansi 60% */}
+              {/* Background Tombol Bertekstur (Visual) */}
               {/* @ts-ignore */}
               <a-image
                 src="#button-masuk-bg"
@@ -373,12 +413,9 @@ export default function AFrameViewer({ scene, onSceneChange, onHotspotClick }: P
                 width={btnWidth}
                 height="0.40"
                 transparent="true"
-                class="clickable"
-                cursor-listener
-                data-target={hotspot.targetScene}
               ></a-image>
 
-              {/* Teks Label Terbaca Jelas Tepat di Depan Background Tombol */}
+              {/* Teks Label Tombol Terbaca Jelas (Visual) */}
               {/* @ts-ignore */}
               <a-text 
                 value={hotspot.text} 
@@ -386,9 +423,6 @@ export default function AFrameViewer({ scene, onSceneChange, onHotspotClick }: P
                 align="center" 
                 color="#FFFFFF" 
                 width={textWidth}
-                class="clickable"
-                cursor-listener
-                data-target={hotspot.targetScene}
               ></a-text>
             {/* @ts-ignore */}
             </a-entity>
