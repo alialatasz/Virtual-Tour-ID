@@ -26,8 +26,8 @@ const glacial = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Jelajah Waktu: Benteng Pendem",
-  description: "Tur Virtual 360 Derajat Historis Benteng Pendem",
+  title: "JelajahVirtual ID",
+  description: "Tur Virtual 360 Derajat Historis Benteng Fort Willem I (Benteng Pendem Ambarawa)",
 };
 
 export default function RootLayout({
