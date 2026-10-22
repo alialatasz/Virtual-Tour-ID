@@ -6,9 +6,10 @@ import { useEffect, useRef } from "react";
 interface GyroToggleProps {
   isOn: boolean;
   onToggle: () => void;
+  className?: string;
 }
 
-export function GyroToggle({ isOn, onToggle }: GyroToggleProps) {
+export function GyroToggle({ isOn, onToggle, className }: GyroToggleProps) {
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioBufferRef = useRef<AudioBuffer | null>(null);
 
@@ -53,7 +54,7 @@ export function GyroToggle({ isOn, onToggle }: GyroToggleProps) {
   };
 
   return (
-    <div className="absolute top-24 left-4 sm:top-28 sm:left-8 z-[50] pointer-events-auto flex flex-col items-center gap-2">
+    <div className={className || "absolute top-24 left-4 sm:top-28 sm:left-8 z-[50] pointer-events-auto flex flex-col items-center gap-2"}>
       <div
         onClick={handleToggleClick}
         className="bg-[#0a0d0a]/90 backdrop-blur-md px-4 py-2 sm:px-5 sm:py-3 rounded-md border border-[#2a302a] shadow-2xl flex items-center gap-3 cursor-pointer group w-full justify-center"

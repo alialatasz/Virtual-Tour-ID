@@ -8,6 +8,7 @@ import PannellumViewer from "@/components/360/PannellumViewer";
 import AFrameViewer from "@/components/360/AFrameViewer";
 import MinimapRadar from "@/components/Navigation/MinimapRadar";
 import ExpandedMapModal from "@/components/Modals/ExpandedMapModal";
+import { GyroToggle } from "@/components/ui/gyro-toggle";
 import { Hand, Maximize, Minimize } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getSiteById, HeritageSite } from "@/lib/tourData";
@@ -20,6 +21,43 @@ export default function TourPage({ params }: { params: { siteId: string } }) {
   const [showOverlay, setShowOverlay] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isMapOpen, setIsMapOpen] = useState(false);
+  const [isMobileDevice, setIsMobileDevice] = useState(false);
+  const [isGyroEnabled, setIsGyroEnabled] = useState(false);
+
+  // Deteksi khusus perangkat HP / Tablet agar gyro hanya muncul di HP
+  useEffect(() => {
+    const checkMobile = () => {
+      const ua = navigator.userAgent || "";
+      const isTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+      const isMobileUA = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(ua);
+      setIsMobileDevice(isMobileUA || (isTouch && window.innerWidth < 1024));
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  // Otomatis sembunyikan tombol "Klik & Geser Layar" setelah 2 detik
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowOverlay(false);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleGyroToggle = () => {
+    if (!isGyroEnabled && typeof (DeviceOrientationEvent as any)?.requestPermission === "function") {
+      (DeviceOrientationEvent as any).requestPermission()
+        .then((permissionState: string) => {
+          if (permissionState === "granted") {
+            setIsGyroEnabled(true);
+          }
+        })
+        .catch((err: any) => console.warn("Gyro permission error:", err));
+    } else {
+      setIsGyroEnabled(!isGyroEnabled);
+    }
+  };
 
   useEffect(() => {
     // Load site data
@@ -113,11 +151,26 @@ export default function TourPage({ params }: { params: { siteId: string } }) {
         {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
       </button>
 
+      {/* Tombol Gyroscope - HANYA MUNCUL DI PERANGKAT HP / TABLET (TIDAK MUNCUL DI LAPTOP) */}
+      {isMobileDevice && (
+        <div 
+          className={`fixed top-[155px] right-4 z-[60] transition-all duration-500 ease-in-out ${
+            isFullscreen ? 'opacity-0 pointer-events-none' : 'opacity-100'
+          }`}
+        >
+          <GyroToggle 
+            isOn={isGyroEnabled} 
+            onToggle={handleGyroToggle}
+            className="pointer-events-auto flex flex-col items-center gap-1 scale-[0.88] origin-top-right shadow-2xl"
+          />
+        </div>
+      )}
+
       {/* Kontainer Viewer dengan Animasi Zoom Maju (Street View Surge) */}
       <div 
         className={`w-full h-full absolute inset-0 transition-transform duration-700 ease-in-out ${
           isTransitioning ? 'scale-[1.12]' : 'scale-100'
-        }`}
+        } ${isMapOpen ? 'invisible' : 'visible'}`}
         style={{ transformOrigin: "center center" }}
       >
         {siteData.rooms[currentScene].type === "video" ? (
@@ -125,6 +178,7 @@ export default function TourPage({ params }: { params: { siteId: string } }) {
             scene={siteData.rooms[currentScene]} 
             onSceneChange={handleSceneChange}
             onHotspotClick={handleHotspotClick}
+            isGyroEnabled={isGyroEnabled}
           />
         ) : (
           <PannellumViewer 
@@ -156,7 +210,7 @@ export default function TourPage({ params }: { params: { siteId: string } }) {
           )}
         </AnimatePresence>
 
-        <RoomCarousel onRoomClick={handleRoomClick} />
+        <RoomCarousel onRoomClick={handleRoomClick} currentSceneId={currentScene} />
       </div>
 
       {/* Minimap Radar Lingkaran Video Game HUD (Tepat di Bawah Tulisan JELAJAH VIRTUAL ID) */}

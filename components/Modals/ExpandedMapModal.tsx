@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   X, 
@@ -13,7 +13,9 @@ import {
   Image as ImageIcon,
   MapPin,
   Sparkles,
-  Info
+  Info,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { 
   fortLocations, 
@@ -39,6 +41,8 @@ export default function ExpandedMapModal({
   const [mapMode, setMapMode] = useState<"vector" | "photo">("vector");
   const [selectedRoom, setSelectedRoom] = useState<FortLocation | null>(null);
   const [hoveredCp, setHoveredCp] = useState<TourCheckpoint | null>(null);
+  const checkpointsScrollRef = useRef<HTMLDivElement>(null);
+  const activeCpBtnRef = useRef<HTMLButtonElement>(null);
 
   // Cari checkpoint aktif saat ini dari tourCheckpoints
   const currentCheckpoint = useMemo<TourCheckpoint>(() => {
@@ -48,6 +52,35 @@ export default function ExpandedMapModal({
     if (found) return found;
     return tourCheckpoints[0];
   }, [currentSceneId]);
+
+  // Auto-scroll bilah 13 titik ke posisi aktif saat modal dibuka atau scene berubah
+  useEffect(() => {
+    if (isOpen && activeCpBtnRef.current) {
+      setTimeout(() => {
+        activeCpBtnRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+          inline: 'center'
+        });
+      }, 100);
+    }
+  }, [isOpen, currentSceneId]);
+
+  // Handler scroll mousewheel horizontal untuk laptop
+  const handleCheckpointsWheel = (e: React.WheelEvent) => {
+    if (checkpointsScrollRef.current) {
+      checkpointsScrollRef.current.scrollLeft += e.deltaY;
+    }
+  };
+
+  const scrollCheckpoints = (direction: 'left' | 'right') => {
+    if (checkpointsScrollRef.current) {
+      checkpointsScrollRef.current.scrollBy({
+        left: direction === 'left' ? -220 : 220,
+        behavior: 'smooth'
+      });
+    }
+  };
 
   // Sinkronkan selectedRoom saat scene berubah
   useEffect(() => {
@@ -85,7 +118,7 @@ export default function ExpandedMapModal({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="fixed inset-0 bg-black/85 backdrop-blur-md"
+          className="fixed inset-0 bg-black/95 backdrop-blur-xl"
         />
 
         {/* Modal Container Presisi, Modern & Elegan */}
@@ -94,7 +127,7 @@ export default function ExpandedMapModal({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 12 }}
           transition={{ duration: 0.25, ease: "easeOut" }}
-          className="relative w-full max-w-4xl max-h-[95vh] bg-[#0c100c] border border-white/10 rounded-2xl sm:rounded-3xl shadow-[0_25px_70px_rgba(0,0,0,0.95)] flex flex-col overflow-hidden z-10"
+          className="relative w-full max-w-4xl max-h-[95vh] bg-[#080d08] border border-white/10 rounded-2xl sm:rounded-3xl shadow-[0_25px_70px_rgba(0,0,0,0.95)] flex flex-col overflow-hidden z-10"
         >
           {/* Header Bar */}
           <div className="flex items-center justify-between px-3 sm:px-6 py-2.5 sm:py-3 border-b border-[#1c241c] bg-[#080c08]/95 flex-shrink-0 gap-2">
@@ -154,35 +187,63 @@ export default function ExpandedMapModal({
             </div>
           </div>
 
-          {/* Bilah 13 Titik Video Aktif (Klik Langsung Berpindah ke Lokasi) */}
-          <div className="bg-[#0e140e] px-3 sm:px-6 py-2 border-b border-[#1c241c] flex items-center gap-1.5 sm:gap-2 overflow-x-auto hide-scrollbar flex-shrink-0">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#FD6842] whitespace-nowrap mr-1 flex items-center gap-1">
-              <Sparkles size={11} /> 13 Titik Jelajah:
-            </span>
-            {tourCheckpoints.map((cp) => {
-              const isCurrent = currentCheckpoint.id === cp.id;
-              return (
-                <button
-                  key={cp.id}
-                  onClick={() => handleJumpToVideo(cp.id)}
-                  onMouseEnter={() => setHoveredCp(cp)}
-                  onMouseLeave={() => setHoveredCp(null)}
-                  className={`px-2.5 py-1.5 rounded-lg text-[11px] font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 flex-shrink-0 cursor-pointer ${
-                    isCurrent
-                      ? "bg-[#FD6842] text-white shadow-[0_0_15px_rgba(253,104,66,0.5)] ring-2 ring-white/70 font-bold scale-[1.02]"
-                      : "bg-[#141b14] border border-[#242f24] text-[#a0aca0] hover:text-white hover:border-[#FD6842] hover:bg-[#1f281f]"
-                  }`}
-                  title={`Klik untuk langsung pindah ke ${cp.fullTitle}`}
-                >
-                  {isCurrent ? (
-                    <Check size={11} className="stroke-[3]" />
-                  ) : (
-                    <span className="opacity-60">{cp.step}.</span>
-                  )}
-                  <span>{cp.name}</span>
-                </button>
-              );
-            })}
+          {/* Bilah 13 Titik Video Aktif (Bisa Scroll Mousewheel & Tombol Panah Navigasi untuk Laptop) */}
+          <div className="relative bg-[#0e140e] border-b border-[#1c241c] flex items-center px-2 sm:px-4 py-2 flex-shrink-0 group">
+            {/* Tombol Geser Kiri (Laptop) */}
+            <button
+              type="button"
+              onClick={() => scrollCheckpoints('left')}
+              className="hidden sm:flex w-7 h-7 rounded-lg bg-[#141b14] hover:bg-[#FD6842] hover:text-white border border-[#242f24] items-center justify-center text-[#8e998e] transition-colors flex-shrink-0 mr-1.5 shadow-md cursor-pointer"
+              title="Geser titik jelajah ke kiri"
+            >
+              <ChevronLeft size={14} />
+            </button>
+
+            <div 
+              ref={checkpointsScrollRef}
+              onWheel={handleCheckpointsWheel}
+              className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto py-1 px-1 flex-1 cursor-grab select-none scrollbar-thin scrollbar-thumb-[#232f23] scrollbar-track-transparent hover:scrollbar-thumb-[#FD6842]/50"
+              style={{ scrollBehavior: "smooth" }}
+            >
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#FD6842] whitespace-nowrap mr-1 flex items-center gap-1 flex-shrink-0">
+                <Sparkles size={11} /> 13 Titik Jelajah:
+              </span>
+              {tourCheckpoints.map((cp) => {
+                const isCurrent = currentCheckpoint.id === cp.id;
+                return (
+                  <button
+                    key={cp.id}
+                    ref={isCurrent ? activeCpBtnRef : null}
+                    onClick={() => handleJumpToVideo(cp.id)}
+                    onMouseEnter={() => setHoveredCp(cp)}
+                    onMouseLeave={() => setHoveredCp(null)}
+                    className={`px-2.5 py-1.5 rounded-lg text-[11px] font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 flex-shrink-0 cursor-pointer ${
+                      isCurrent
+                        ? "bg-[#FD6842] text-white shadow-[0_0_15px_rgba(253,104,66,0.5)] ring-2 ring-white/70 font-bold scale-[1.02]"
+                        : "bg-[#141b14] border border-[#242f24] text-[#a0aca0] hover:text-white hover:border-[#FD6842] hover:bg-[#1f281f]"
+                    }`}
+                    title={`Klik untuk langsung pindah ke ${cp.fullTitle}`}
+                  >
+                    {isCurrent ? (
+                      <Check size={11} className="stroke-[3]" />
+                    ) : (
+                      <span className="opacity-60">{cp.step}.</span>
+                    )}
+                    <span>{cp.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Tombol Geser Kanan (Laptop) */}
+            <button
+              type="button"
+              onClick={() => scrollCheckpoints('right')}
+              className="hidden sm:flex w-7 h-7 rounded-lg bg-[#141b14] hover:bg-[#FD6842] hover:text-white border border-[#242f24] items-center justify-center text-[#8e998e] transition-colors flex-shrink-0 ml-1.5 shadow-md cursor-pointer"
+              title="Geser titik jelajah ke kanan"
+            >
+              <ChevronRight size={14} />
+            </button>
           </div>
 
           {/* Area Konten Peta */}

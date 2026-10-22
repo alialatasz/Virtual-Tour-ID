@@ -20,6 +20,7 @@ interface Props {
   scene: SceneData;
   onSceneChange?: (sceneId: string) => void;
   onHotspotClick?: (id: string, tab: 'history'|'current') => void;
+  isGyroEnabled?: boolean;
 }
 
 const getScenePlaceholder = (scene: SceneData) => {
@@ -42,13 +43,35 @@ const getScenePlaceholder = (scene: SceneData) => {
   return map[scene.id] || scene.imgAfter || "/gambar/thumb-r01-gerbang-1.jpg";
 };
 
-export default function AFrameViewer({ scene, onSceneChange, onHotspotClick }: Props) {
+export default function AFrameViewer({ scene, onSceneChange, onHotspotClick, isGyroEnabled = false }: Props) {
   const [isMounted, setIsMounted] = useState(false);
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   const [isBuffering, setIsBuffering] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const onSceneChangeRef = useRef(onSceneChange);
   const lastLoadedSceneIdRef = useRef<string>("");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setIsMobile(window.innerWidth < 768);
+      const handleResize = () => setIsMobile(window.innerWidth < 768);
+      window.addEventListener("resize", handleResize);
+      return () => window.removeEventListener("resize", handleResize);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const cam = document.querySelector("a-camera");
+      if (cam) {
+        cam.setAttribute(
+          "look-controls",
+          `reverseMouseDrag: true; touchEnabled: true; mouseEnabled: true; magicWindowTrackingEnabled: ${isGyroEnabled ? "true" : "false"}`
+        );
+      }
+    }
+  }, [isGyroEnabled]);
 
   const placeholderSrc = getScenePlaceholder(scene);
 
@@ -381,10 +404,27 @@ export default function AFrameViewer({ scene, onSceneChange, onHotspotClick }: P
           visible={isVideoPlaying}
         ></a-videosphere>
 
-        {/* Render Hotspots Navigasi Pindah Ruangan Elegan, Jelas & Terbaca */}
+        {/* Render Hotspots Navigasi Pindah Ruangan Rapi, Proporsional & Responsif untuk HP & Laptop */}
         {scene.sceneHotspots?.map((hotspot, idx) => {
-          const btnWidth = hotspot.text.length > 14 ? "2.0" : hotspot.text.length > 8 ? "1.6" : "1.3";
-          const textWidth = hotspot.text.length > 14 ? "3.9" : "4.0";
+          const isLong = hotspot.text.length > 14;
+          const isMedium = hotspot.text.length > 8;
+
+          // Proporsi tombol yang rapi, pas dan tidak kebesaran di layar HP
+          const btnWidth = isMobile
+            ? (isLong ? "1.55" : isMedium ? "1.25" : "1.00")
+            : (isLong ? "1.90" : isMedium ? "1.50" : "1.20");
+
+          const btnHeight = isMobile ? "0.34" : "0.40";
+
+          const textWidth = isMobile
+            ? (isLong ? "2.85" : "3.0")
+            : (isLong ? "3.6" : "3.8");
+
+          const arrowScale = isMobile ? "0.40 0.40 0.40" : "0.50 0.50 0.50";
+          const arrowPosY = isMobile ? 0.09 : 0.12;
+          const arrowAnimToY = isMobile ? 0.18 : 0.22;
+          const btnPosY = isMobile ? -0.24 : -0.30;
+          const textPosY = isMobile ? -0.24 : -0.30;
 
           return (
             // @ts-ignore
@@ -393,21 +433,21 @@ export default function AFrameViewer({ scene, onSceneChange, onHotspotClick }: P
               {/* @ts-ignore */}
               <a-image 
                 src="#arrow-icon" 
-                position="0 0.12 -4.50" 
-                scale="0.52 0.52 0.52" 
+                position={`0 ${arrowPosY} -4.50`} 
+                scale={arrowScale} 
                 class="clickable"
                 cursor-listener
                 data-target={hotspot.targetScene}
-                animation="property: position; to: 0 0.22 -4.50; dir: alternate; dur: 1200; easing: easeInOutSine; loop: true"
+                animation={`property: position; to: 0 ${arrowAnimToY} -4.50; dir: alternate; dur: 1200; easing: easeInOutSine; loop: true`}
               ></a-image>
 
               {/* Background Tombol Bertekstur Lengkung */}
               {/* @ts-ignore */}
               <a-image
                 src="#button-masuk-bg"
-                position="0 -0.32 -4.50"
+                position={`0 ${btnPosY} -4.50`}
                 width={btnWidth}
-                height="0.42"
+                height={btnHeight}
                 transparent="true"
                 class="clickable"
                 cursor-listener
@@ -418,7 +458,7 @@ export default function AFrameViewer({ scene, onSceneChange, onHotspotClick }: P
               {/* @ts-ignore */}
               <a-text 
                 value={hotspot.text} 
-                position="0 -0.32 -4.42" 
+                position={`0 ${textPosY} -4.42`} 
                 align="center" 
                 color="#FFFFFF" 
                 width={textWidth}
@@ -434,7 +474,7 @@ export default function AFrameViewer({ scene, onSceneChange, onHotspotClick }: P
         {/* @ts-ignore */}
         <a-camera 
           position="0 0 0" 
-          look-controls="reverseMouseDrag: true; touchEnabled: true; mouseEnabled: true; magicWindowTrackingEnabled: false" 
+          look-controls={`reverseMouseDrag: true; touchEnabled: true; mouseEnabled: true; magicWindowTrackingEnabled: ${isGyroEnabled ? "true" : "false"}`} 
           wasd-controls="enabled: false" 
           keyboard-rotate
         ></a-camera>

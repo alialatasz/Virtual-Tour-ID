@@ -287,7 +287,7 @@ export const tourCheckpoints: TourCheckpoint[] = [
     name: "Makam Monumen",
     sub: "Joglo Pahlawan • Ruang #4",
     fullTitle: "Makam & Monumen Jogonianfu (Ruang #4)",
-    desc: "Area pendopo joglo Makam & Monumen Jogonianfu pahlawan benteng.",
+    desc: "Area makam ini menjadi tempat peristirahatan terakhir sejumlah ulama yang pernah ditahan di Benteng Willem I serta monumen peringatan Jugun Ianfu.",
     roomNumber: 4,
     branch: 'makam',
     vx: 360,
@@ -362,7 +362,7 @@ export const fortLocations: FortLocation[] = [
     photoY: 30.5,
     status: "active",
     sceneId: "r08-pemakaman",
-    description: "Area makam dan monumen peringatan sejarah di bawah pendopo joglo sisi utara kawasan benteng.",
+    description: "Area makam ini menjadi tempat peristirahatan terakhir sejumlah ulama yang pernah ditahan di Benteng Willem I yang meninggal pada masa penjajahan Jepang, sepanjang tahun 1942-1945. Salah satu tokoh yang dimakamkan di sini adalah Kiai Mahfudh Salam, ulama asal Kajen, Pati, sekaligus ayahanda Kiai Sahal Mahfudh. Beliau pernah ditahan di Ambarawa dan wafat pada masa pendudukan Jepang. Di dekat kawasan makam terdapat monumen untuk mengenang korban Jugun Ianfu. Jugun Ianfu merupakan sebutan bagi perempuan korban perbudakan seksual oleh militer Jepang pada masa Perang Dunia II. Pada masa pendudukan Jepang, kamp-kamp di Ambarawa menampung orang-orang yang diinternir, termasuk perempuan dan anak-anak. Sejumlah perempuan dari kamp tersebut kemudian dipindahkan secara paksa ke lokasi lain dan menjadi korban kekerasan seksual.",
     thumbnail: "/gambar/thumb-r08-pemakaman.jpg"
   },
   {
@@ -834,8 +834,8 @@ export const heritageSites: HeritageSite[] = [
         type: "video",
         mediaUrl: "/R08-pemakaman.mp4",
         panorama: "/R08-pemakaman.mp4",
-        historyDesc: "Area sakral pendopo joglo kayu peneduh Makam & Monumen Jogonianfu. Monumen ini memperingati para korban dan peristiwa sejarah kelam masa pendudukan masa lampau di kawasan Benteng Ambarawa.",
-        shortDesc: "Monumen peringatan bersejarah dan makam di bawah pendopo joglo benteng.",
+        historyDesc: "Area makam ini menjadi tempat peristirahatan terakhir sejumlah ulama yang pernah ditahan di Benteng Willem I yang meninggal pada masa penjajahan Jepang, sepanjang tahun 1942-1945. Salah satu tokoh yang dimakamkan di sini adalah Kiai Mahfudh Salam, ulama asal Kajen, Pati, sekaligus ayahanda Kiai Sahal Mahfudh. Beliau pernah ditahan di Ambarawa dan wafat pada masa pendudukan Jepang. Di dekat kawasan makam terdapat monumen untuk mengenang korban Jugun Ianfu. Jugun Ianfu merupakan sebutan bagi perempuan korban perbudakan seksual oleh militer Jepang pada masa Perang Dunia II. Pada masa pendudukan Jepang, kamp-kamp di Ambarawa menampung orang-orang yang diinternir, termasuk perempuan dan anak-anak. Sejumlah perempuan dari kamp tersebut kemudian dipindahkan secara paksa ke lokasi lain dan menjadi korban kekerasan seksual.",
+        shortDesc: "Makam ulama pejuang kemerdekaan & Monumen korban Jugun Ianfu di bawah pendopo joglo benteng.",
         imgBefore: "/gambar/benteng-lama.png",
         imgAfter: "/gambar/thumb-r08-pemakaman.jpg",
         mapCoords: { x: 19.9, y: 30.5 },
