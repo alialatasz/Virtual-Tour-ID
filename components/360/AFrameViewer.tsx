@@ -76,20 +76,18 @@ export default function AFrameViewer({ scene, onSceneChange, onHotspotClick }: P
     if (typeof window !== "undefined") {
       require("aframe");
       
-      // Mendaftarkan komponen klik & sentuh khusus untuk hotspot
+      // Mendaftarkan komponen klik & sentuh khusus untuk hotspot dengan debounce
       if (typeof window.AFRAME !== 'undefined' && !window.AFRAME.components['cursor-listener']) {
         window.AFRAME.registerComponent('cursor-listener', {
           init: function () {
             const el = this.el;
-            let isTriggered = false;
+            let lastClickTime = 0;
 
             const handleAction = (evt?: any) => {
-              if (evt) {
-                if (evt.stopPropagation) evt.stopPropagation();
-              }
-              if (isTriggered) return;
-              isTriggered = true;
-              setTimeout(() => { isTriggered = false; }, 600);
+              if (evt && evt.stopPropagation) evt.stopPropagation();
+              const now = Date.now();
+              if (now - lastClickTime < 500) return;
+              lastClickTime = now;
 
               const target = el.getAttribute('data-target');
               if (target && typeof window !== 'undefined' && window.__onTourSceneChange) {
@@ -104,7 +102,6 @@ export default function AFrameViewer({ scene, onSceneChange, onHotspotClick }: P
 
             el.addEventListener('click', handleAction);
             el.addEventListener('touchend', (e: any) => {
-              e.preventDefault();
               handleAction(e);
             });
             el.addEventListener('mouseenter', () => {
@@ -196,7 +193,10 @@ export default function AFrameViewer({ scene, onSceneChange, onHotspotClick }: P
       vid.setAttribute("playsinline", "");
       vid.setAttribute("webkit-playsinline", "true");
       if (vid.paused) {
-        vid.play().catch(e => console.warn("Ensure play error:", e));
+        vid.play().then(() => {
+          setIsVideoPlaying(true);
+          setIsBuffering(false);
+        }).catch(e => console.warn("Ensure play error:", e));
       }
     }
   };
@@ -219,7 +219,6 @@ export default function AFrameViewer({ scene, onSceneChange, onHotspotClick }: P
     if (!isMounted || !videoRef.current) return;
     const vid = videoRef.current;
 
-    // Pastikan atribut pemutar seluler selalu aktif
     vid.muted = true;
     (vid as any).defaultMuted = true;
     vid.setAttribute("muted", "");
@@ -255,7 +254,10 @@ export default function AFrameViewer({ scene, onSceneChange, onHotspotClick }: P
       };
 
       const handleCanPlay = () => {
-        vid.play().catch(e => console.warn("Autoplay notice:", e));
+        vid.play().then(() => {
+          setIsVideoPlaying(true);
+          setIsBuffering(false);
+        }).catch(e => console.warn("Autoplay notice:", e));
         updateVideosphereTexture();
       };
 
@@ -287,7 +289,10 @@ export default function AFrameViewer({ scene, onSceneChange, onHotspotClick }: P
       };
     } else {
       if (vid.paused) {
-        vid.play().catch(e => console.warn(e));
+        vid.play().then(() => {
+          setIsVideoPlaying(true);
+          setIsBuffering(false);
+        }).catch(e => console.warn(e));
       } else {
         setIsVideoPlaying(true);
         setIsBuffering(false);
@@ -357,65 +362,59 @@ export default function AFrameViewer({ scene, onSceneChange, onHotspotClick }: P
         {/* @ts-ignore */}
         </a-assets>
 
-        {/* Latar Belakang Foto 360° Equirectangular Instan (0 Detik, Menghilangkan Layar Hitam) */}
+        {/* Latar Belakang Foto 360° Equirectangular Instan (Hanya Aktif Saat Video Masih Buffering untuk Mencegah Z-Fighting & Garis-Garis) */}
         {/* @ts-ignore */}
         <a-sky 
           key={`sky-${scene.id}`}
           src={placeholderSrc} 
           rotation="0 -90 0"
+          visible={!isVideoPlaying}
         ></a-sky>
 
-        {/* Pemutar Video 360° Spherical (Fades in otomatis begitu video berputar) */}
+        {/* Pemutar Video 360° Spherical (Aktif Penuh saat Video Sudah Berputar) */}
         {/* @ts-ignore */}
         <a-videosphere 
           src="#video360" 
           rotation="0 -90 0"
-          segments-width="36"
-          segments-height="36"
+          segments-width="64"
+          segments-height="64"
           visible={isVideoPlaying}
         ></a-videosphere>
 
-        {/* Render Hotspots Navigasi Pindah Ruangan dengan Hitbox Presisi */}
+        {/* Render Hotspots Navigasi Pindah Ruangan Elegan, Jelas & Terbaca */}
         {scene.sceneHotspots?.map((hotspot, idx) => {
-          const btnWidth = hotspot.text.length > 14 ? "1.9" : hotspot.text.length > 8 ? "1.5" : "1.2";
-          const textWidth = hotspot.text.length > 14 ? "3.8" : "4.0";
-          const hitboxWidth = Math.max(Number(btnWidth), 2.0);
+          const btnWidth = hotspot.text.length > 14 ? "2.0" : hotspot.text.length > 8 ? "1.6" : "1.3";
+          const textWidth = hotspot.text.length > 14 ? "3.9" : "4.0";
 
           return (
             // @ts-ignore
             <a-entity key={`${scene.id}-hotspot-${idx}`} rotation={`${hotspot.pitch} ${hotspot.yaw} 0`}>
-              {/* Hitbox Transparan Luas untuk Sentuhan HP & Klik Mouse yang 100% Responsif */}
-              {/* @ts-ignore */}
-              <a-plane
-                position="0 -0.10 -4.4"
-                width={hitboxWidth}
-                height="1.1"
-                material="opacity: 0.001; transparent: true"
-                class="clickable"
-                cursor-listener
-                data-target={hotspot.targetScene}
-              ></a-plane>
-
-              {/* Ikon Panah Mengambang Proporsional (Visual) */}
+              {/* Ikon Panah Mengambang Proporsional */}
               {/* @ts-ignore */}
               <a-image 
                 src="#arrow-icon" 
-                position="0 0.10 -4.5" 
-                scale="0.48 0.48 0.48" 
-                animation="property: position; to: 0 0.20 -4.5; dir: alternate; dur: 1200; easing: easeInOutSine; loop: true"
+                position="0 0.12 -4.50" 
+                scale="0.52 0.52 0.52" 
+                class="clickable"
+                cursor-listener
+                data-target={hotspot.targetScene}
+                animation="property: position; to: 0 0.22 -4.50; dir: alternate; dur: 1200; easing: easeInOutSine; loop: true"
               ></a-image>
 
-              {/* Background Tombol Bertekstur (Visual) */}
+              {/* Background Tombol Bertekstur Lengkung */}
               {/* @ts-ignore */}
               <a-image
                 src="#button-masuk-bg"
                 position="0 -0.32 -4.50"
                 width={btnWidth}
-                height="0.40"
+                height="0.42"
                 transparent="true"
+                class="clickable"
+                cursor-listener
+                data-target={hotspot.targetScene}
               ></a-image>
 
-              {/* Teks Label Tombol Terbaca Jelas (Visual) */}
+              {/* Teks Label Tombol Terbaca Jelas Tepat di Depan Background */}
               {/* @ts-ignore */}
               <a-text 
                 value={hotspot.text} 
@@ -423,6 +422,9 @@ export default function AFrameViewer({ scene, onSceneChange, onHotspotClick }: P
                 align="center" 
                 color="#FFFFFF" 
                 width={textWidth}
+                class="clickable"
+                cursor-listener
+                data-target={hotspot.targetScene}
               ></a-text>
             {/* @ts-ignore */}
             </a-entity>
