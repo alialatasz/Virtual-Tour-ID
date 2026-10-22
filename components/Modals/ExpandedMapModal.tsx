@@ -747,6 +747,19 @@ export default function ExpandedMapModal({
                     filter="url(#glow)"
                   />
 
+                  {/* Indikator Arah Penunjuk di Perempatan: Belok Kiri ke Makam & Kanan/Lurus ke Benteng */}
+                  <g pointerEvents="none">
+                    <rect x="332" y="222" width="76" height="15" rx="3" fill="#08140a" stroke="#10b981" strokeWidth="1" />
+                    <text x="370" y="233" fill="#34d399" fontSize="7.5" fontWeight="bold" textAnchor="middle">
+                      ← KE MAKAM
+                    </text>
+                    
+                    <rect x="470" y="325" width="84" height="15" rx="3" fill="#08140a" stroke="#10b981" strokeWidth="1" />
+                    <text x="512" y="336" fill="#34d399" fontSize="7.5" fontWeight="bold" textAnchor="middle">
+                      KE BENTENG →
+                    </text>
+                  </g>
+
                   {/* ========================================================== */}
                   {/* PIN TITIK CHECKPOINT 1 S.D. 13 (INTERAKTIF LANGSUNG PINDAH) */}
                   {/* ========================================================== */}
